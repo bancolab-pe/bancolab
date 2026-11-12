@@ -1,0 +1,130 @@
+openapi: 3.0.3                                   # versión del estándar OpenAPI
+info:
+  title: Exchange API                            # nombre de la API
+  version: 1.0.0                                 # versión del contrato
+  description: Consulta de tipo de cambio y conversión de montos entre soles y dólares.
+  contact:
+    name: Equipo BancoLab                        # responsable de la API
+servers:
+  - url: http://localhost:8082                   # dónde corre en dev
+    description: Desarrollo local
+tags:
+  - name: exchange-rates                         # agrupa los endpoints en la documentación
+    description: Tasas de cambio y conversiones
+
+paths:
+  /v1/exchange-rates/current:
+    get:
+      tags: [exchange-rates]
+      operationId: getCurrentRate                # nombre del método Java que se generará
+      summary: Obtiene la tasa de cambio vigente
+      description: Devuelve la tasa de compra y de venta de USD/PEN para el día actual.
+      responses:
+        '200':
+          description: Tasa vigente encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeRateResponse'
+        '404':
+          description: No hay tasa registrada para hoy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/conversions:
+    post:
+      tags: [exchange-rates]
+      operationId: convertAmount
+      summary: Convierte un monto según el segmento del cliente
+      description: Calcula el monto convertido aplicando la tasa que corresponde al segmento.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversionRequest'
+      responses:
+        '200':
+          description: Conversión calculada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversionResponse'
+        '400':
+          description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:                                       # los DTOs: forma del JSON
+    ExchangeRateResponse:
+      type: object
+      required: [currencyPair, buyRate, sellRate, date]
+      properties:
+        currencyPair:
+          type: string
+          example: USD/PEN
+        buyRate:
+          type: number                           # a cuánto el banco compra dólares
+          example: 3.70
+        sellRate:
+          type: number                           # a cuánto el banco vende dólares
+          example: 3.75
+        date:
+          type: string
+          format: date
+          example: '2026-11-12'
+
+    ConversionRequest:
+      type: object
+      required: [amount, fromCurrency, toCurrency, segment]
+      properties:
+        amount:
+          type: number
+          minimum: 0.01                          # no se aceptan montos cero ni negativos
+          example: 100.00
+        fromCurrency:
+          $ref: '#/components/schemas/Currency'
+        toCurrency:
+          $ref: '#/components/schemas/Currency'
+        segment:
+          type: string
+          enum: [NORMAL, PYME, ENALTA]           # solo estos valores son válidos
+          example: ENALTA
+
+    ConversionResponse:
+      type: object
+      required: [originalAmount, convertedAmount, appliedRate, fromCurrency, toCurrency]
+      properties:
+        originalAmount:
+          type: number
+          example: 100.00
+        convertedAmount:
+          type: number
+          example: 373.00
+        appliedRate:
+          type: number                           # la tasa usada, ya con la mejora del segmento
+          example: 3.73
+        fromCurrency:
+          $ref: '#/components/schemas/Currency'
+        toCurrency:
+          $ref: '#/components/schemas/Currency'
+
+    Currency:
+      type: string
+      enum: [PEN, USD]
+
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string                           # código de error estable, para que el front lo interprete
+          example: RATE_NOT_FOUND
+        message:
+          type: string                           # mensaje legible
+          example: No hay tasa registrada para hoy
