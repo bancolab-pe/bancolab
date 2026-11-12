@@ -57,6 +57,10 @@
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-hibernate-validator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
             <artifactId>quarkus-junit</artifactId>
             <scope>test</scope>
         </dependency>
@@ -107,6 +111,48 @@
                         <maven.home>${maven.home}</maven.home>
                     </systemPropertyVariables>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.openapitools</groupId>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
+                <version>7.14.0</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <!-- ejecuta la generación en cada compilación -->
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <!-- el contrato, dos carpetas arriba del servicio -->
+                            <inputSpec>${project.basedir}/../../contracts/exchange-api.yaml</inputSpec>
+                            <!-- generador para Jakarta REST, el estándar que usa Quarkus -->
+                            <generatorName>jaxrs-spec</generatorName>
+                            <!-- paquete donde va la interfaz de la API -->
+                            <apiPackage>pe.bancolab.exchange.infrastructure.in.rest.api</apiPackage>
+                            <!-- paquete donde van los DTOs -->
+                            <modelPackage>pe.bancolab.exchange.infrastructure.in.rest.dto</modelPackage>
+                            <!-- no genera archivos de apoyo que Quarkus no necesita -->
+                            <generateSupportingFiles>false</generateSupportingFiles>
+                            <configOptions>
+                                <!-- solo interfaces: la implementación la escribes tú -->
+                                <interfaceOnly>true</interfaceOnly>
+                                <!-- usa jakarta.* en lugar del antiguo javax.* -->
+                                <useJakartaEe>true</useJakartaEe>
+                                <!-- traduce las reglas del contrato a anotaciones de validación -->
+                                <useBeanValidation>true</useBeanValidation>
+                                <!-- los métodos devuelven el DTO directamente -->
+                                <returnResponse>false</returnResponse>
+                                <!-- no agrega anotaciones de Swagger que no necesitamos -->
+                                <useSwaggerAnnotations>false</useSwaggerAnnotations>
+                                <!-- fechas con java.time.LocalDate -->
+                                <dateLibrary>java8</dateLibrary>
+                                <!-- nombra la interfaz según el tag del contrato -->
+                                <useTags>true</useTags>
+                            </configOptions>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
