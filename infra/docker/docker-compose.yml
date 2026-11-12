@@ -1,0 +1,21 @@
+services:
+  postgres:                              # base de datos relacional
+    image: postgres:16                   # imagen oficial de PostgreSQL, versión 16
+    container_name: bancolab-postgres    # nombre del contenedor, para reconocerlo
+    environment:
+      POSTGRES_DB: exchangedb            # base de datos que se crea al iniciar
+      POSTGRES_USER: bancolab            # usuario
+      POSTGRES_PASSWORD: bancolab        # contraseña, solo para desarrollo local
+    ports:
+      - "5432:5432"                      # puerto de tu Mac : puerto del contenedor
+    volumes:
+      - postgres-data:/var/lib/postgresql/data   # guarda los datos aunque se apague el contenedor
+
+  redis:                                 # caché en memoria
+    image: redis:7                       # imagen oficial de Redis, versión 7
+    container_name: bancolab-redis
+    ports:
+      - "6379:6379"                      # puerto por defecto de Redis
+
+volumes:
+  postgres-data:                         # espacio en disco que administra Docker
